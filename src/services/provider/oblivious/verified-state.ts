@@ -10,7 +10,7 @@
  */
 
 import { keccak_256 } from "@noble/hashes/sha3";
-import { hexToBytes, bytesToHex, normalizeAddress, normalizeSlotKey } from "./hex";
+import { hexToBytes, bytesToHex, hexToBigInt, normalizeAddress, normalizeSlotKey } from "./hex";
 import { verifyAccountProof, verifyStorageProof } from "./mpt";
 import { fetchProof, fetchCode } from "./rpc-client";
 import type { VerifiedAccount, EthGetProofResponse } from "./types";
@@ -270,10 +270,11 @@ export class VerifiedStateBackend {
     }
 
     // Cross-check: verified values from proof must match response fields (spec section 5.2 step 4)
-    const responseBalance = BigInt(proof.balance);
-    const responseNonce = BigInt(proof.nonce);
-    const responseStorageHash = proof.storageHash.toLowerCase();
-    const responseCodeHash = proof.codeHash.toLowerCase();
+    // oblivious_node may pad hex values with trailing spaces for constant-size responses
+    const responseBalance = hexToBigInt(proof.balance);
+    const responseNonce = hexToBigInt(proof.nonce);
+    const responseStorageHash = proof.storageHash.trim().toLowerCase();
+    const responseCodeHash = proof.codeHash.trim().toLowerCase();
 
     if (result.balance !== responseBalance) {
       throw new Error(

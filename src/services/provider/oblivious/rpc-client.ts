@@ -13,6 +13,7 @@ import type {
   JsonRpcResponse,
   EthGetProofResponse,
 } from "./types";
+import { normalizeSlotKey } from "./hex";
 
 let _nextId = 1;
 function nextId(): number {
@@ -78,10 +79,12 @@ export async function fetchProof(
   blockNumber: bigint
 ): Promise<EthGetProofResponse> {
   // oblivious_node expects blockNumber as a plain u64, not hex
+  // oblivious_node requires storage keys to be exactly 64 hex chars (32 bytes)
+  const normalizedKeys = storageKeys.map(normalizeSlotKey);
   const result = await jsonRpcCall<EthGetProofResponse>(
     url,
     "eth_getProof",
-    [address, storageKeys, Number(blockNumber)]
+    [address, normalizedKeys, Number(blockNumber)]
   );
 
   return result;

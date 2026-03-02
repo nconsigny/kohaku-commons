@@ -2,9 +2,12 @@
  * Core types used throughout the execution client.
  */
 
-/** EIP-1186 eth_getProof response. */
+/**
+ * EIP-1186 eth_getProof response.
+ * Note: oblivious_node omits the `address` field (non-standard).
+ */
 export interface EthGetProofResponse {
-  address: string;
+  address?: string;
   balance: string;
   codeHash: string;
   nonce: string;

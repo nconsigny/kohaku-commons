@@ -3,7 +3,10 @@
  */
 
 export function hexToBytes(hex: string): Uint8Array {
-  const h = hex.startsWith("0x") ? hex.slice(2) : hex;
+  // oblivious_node pads values with trailing spaces for constant-size responses
+  const trimmed = hex.trim();
+  const h = trimmed.startsWith("0x") ? trimmed.slice(2) : trimmed;
+  if (h.length === 0) return new Uint8Array(0);
   if (h.length % 2 !== 0) throw new Error(`Odd-length hex: ${hex}`);
   const bytes = new Uint8Array(h.length / 2);
   for (let i = 0; i < bytes.length; i++) {
@@ -33,7 +36,9 @@ export function stripLeadingZeros(hex: string): string {
 
 /** Convert hex quantity string to bigint. Handles "0x0", "0x2a", etc. */
 export function hexToBigInt(hex: string): bigint {
-  const h = hex.startsWith("0x") ? hex.slice(2) : hex;
+  // oblivious_node pads hex values with trailing spaces
+  const trimmed = hex.trim();
+  const h = trimmed.startsWith("0x") ? trimmed.slice(2) : trimmed;
   if (h === "" || h === "0") return 0n;
   return BigInt("0x" + h);
 }

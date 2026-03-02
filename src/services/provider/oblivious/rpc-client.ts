@@ -62,32 +62,50 @@ export async function jsonRpcCall<T = unknown>(
 }
 
 /**
- * Fetch an EIP-1186 proof from the oblivious_node server.
+ * Fetch an EIP-1186 proof from the proof server.
  *
  * Per spec section 4.2: uses explicit blockNumber (not "latest") to prevent
  * header/proof mismatch races.
  *
- * @param url - Proof server URL
- * @param address - 0x-prefixed Ethereum address
- * @param storageKeys - Array of 0x-prefixed 32-byte storage keys
- * @param blockNumber - Explicit block number to query
+ * Block number format:
+ *  - oblivious_node expects a plain u64 integer
+ *  - standard geth/erigon expects a hex string ("0x...")
+ *
+ * The function tries the oblivious_node format first (integer). If the server
+ * rejects it (e.g., standard geth), it retries with hex string format.
  */
+let _useHexBlockNumber = false;
+
 export async function fetchProof(
   url: string,
   address: string,
   storageKeys: string[],
   blockNumber: bigint
 ): Promise<EthGetProofResponse> {
-  // oblivious_node expects blockNumber as a plain u64, not hex
-  // oblivious_node requires storage keys to be exactly 64 hex chars (32 bytes)
   const normalizedKeys = storageKeys.map(normalizeSlotKey);
-  const result = await jsonRpcCall<EthGetProofResponse>(
-    url,
-    "eth_getProof",
-    [address, normalizedKeys, Number(blockNumber)]
-  );
+  const blockParam = _useHexBlockNumber
+    ? "0x" + blockNumber.toString(16)
+    : Number(blockNumber);
 
-  return result;
+  try {
+    return await jsonRpcCall<EthGetProofResponse>(
+      url,
+      "eth_getProof",
+      [address, normalizedKeys, blockParam]
+    );
+  } catch (err: any) {
+    // If oblivious_node format (integer) fails, switch to hex for this session
+    if (!_useHexBlockNumber && err.message?.includes("cannot unmarshal")) {
+      _useHexBlockNumber = true;
+      const hexBlock = "0x" + blockNumber.toString(16);
+      return jsonRpcCall<EthGetProofResponse>(
+        url,
+        "eth_getProof",
+        [address, normalizedKeys, hexBlock]
+      );
+    }
+    throw err;
+  }
 }
 
 /**

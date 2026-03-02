@@ -94,6 +94,7 @@ export interface Network {
   disabled?: boolean
   batchMaxCount?: number
   heliosCheckpoint?: string
+  obliviousProofServerUrl?: string
 }
 
 export interface AddNetworkRequestParams {
@@ -107,6 +108,7 @@ export interface AddNetworkRequestParams {
   iconUrls: Network['iconUrls']
   rpcProvider?: Network['rpcProvider']
   heliosCheckpoint?: Network['heliosCheckpoint']
+  obliviousProofServerUrl?: Network['obliviousProofServerUrl']
 }
 
 export interface ChainlistNetwork {

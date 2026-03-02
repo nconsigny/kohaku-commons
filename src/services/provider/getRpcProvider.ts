@@ -8,6 +8,11 @@ import {
   isColibriSupportedChain
 } from './ColibriRpcProvider'
 import { HeliosEthersProvider } from './HeliosEthersProvider'
+import {
+  ObliviousProofOverlay,
+  wrapWithOblivious,
+  isObliviousSupportedChain
+} from './ObliviousProofOverlay'
 
 export type MinNetworkConfig = Omit<Partial<NetworkConfig>, 'chainId'> & {
   rpcUrls: string[]
@@ -79,6 +84,21 @@ export function getRpcProvider (config: GetRpcProviderConfig, forceBypassHelios:
   }
 
   ;(provider as any).rpcProvider = providerKind
+
+  // Layer oblivious privacy overlay on top of existing provider
+  if (
+    config.obliviousProofServerUrl &&
+    config.chainId &&
+    isObliviousSupportedChain(config.chainId)
+  ) {
+    provider = wrapWithOblivious(provider as JsonRpcProvider, config.chainId, {
+      proofServerUrl: config.obliviousProofServerUrl,
+      failurePolicy: 'fallback',
+    })
+    ;(provider as any).rpcProvider = providerKind
+    ;(provider as any).obliviousEnabled = true
+  }
+
   return provider
 }
 
